@@ -1,49 +1,58 @@
 use crate::{
-    minting::mint,
-    processing::process_transaction,
-    transaction::{Transaction, validate_transaction},
-    wallet::Wallet,
+    blockchain::{
+        mempool::Mempool,
+        processing::process_transaction,
+    },
+    wallet::wallet::Wallet,
 };
 
-pub fn run() {
-    println!("Initializing wallets...");
+const COIN: u64 = 100_000_000;
 
+pub fn run_simulation() {
+    println!("Initializing blockchain and mempool...");
+    let mut blockchain = crate::blockchain::blockchain::Blockchain::new();
+    let mut mempool = Mempool::new();
+
+    println!("\nInitializing wallets...");
     let mut wallet_a = Wallet::new();
-    println!("\nWallet A created:");
-    println!("  Private Key: {}", hex::encode(wallet_a.signing_key.to_bytes()));
-    println!("  Public Key (Address): {}", hex::encode(wallet_a.verifying_key.as_bytes()));
-
     let mut wallet_b = Wallet::new();
-    println!("\nWallet B created:");
-    println!("  Private Key: {}", hex::encode(wallet_b.signing_key.to_bytes()));
-    println!("  Public Key (Address): {}", hex::encode(wallet_b.verifying_key.as_bytes()));
+    println!("Wallet A address: {}", hex::encode(wallet_a.verifying_key.as_bytes()));
+    println!("Wallet B address: {}", hex::encode(wallet_b.verifying_key.as_bytes()));
+    println!("Wallet B public key: {:?}", wallet_b.verifying_key.as_bytes());
 
-    println!("\nFunding Wallet A with minted UTXOs...");
-    mint(&mut wallet_a, 100);
-    mint(&mut wallet_a, 50);
-    println!("Wallet A balance: {}", wallet_a.balance());
-    println!("Wallet A nonce: {}", wallet_a.nonce);
+    println!("\nMinting initial funds for Wallet A...");
+    let amount_to_mint = 100 * COIN;
+    let utxo_id = format!("{}-{}", hex::encode(wallet_a.verifying_key.as_bytes()), wallet_a.nonce);
+    wallet_a.utxos.insert(utxo_id.clone(), amount_to_mint);
+    wallet_a.balance += amount_to_mint;
+    blockchain.utxos.insert(utxo_id);
+    println!("Wallet A balance: {} units", wallet_a.balance);
+    
+    println!("\nCreating transactions and adding to mempool...");
+    let tx = wallet_a.create_transaction(wallet_b.verifying_key, 50);
+    process_transaction(&mut mempool, &tx);
+    println!("Transaction 1 added to mempool. Mempool size: {}", mempool.size());
 
-    println!("\nCreating and signing a transaction from Wallet A to Wallet B for 120...");
-    let mut transaction = Transaction::new(
-        wallet_a.verifying_key,
-        wallet_b.verifying_key,
-        120,
-        wallet_a.nonce,
-    );
-    transaction.sign(&wallet_a);
-    println!("Transaction ID: {}", hex::encode(transaction.id));
+    let tx2 = wallet_a.create_transaction(wallet_b.verifying_key, 30 * COIN);
+    mempool.add_transaction(tx2.clone());
+    println!("Transaction 2 added to mempool. Mempool size: {}", mempool.size());
 
-    println!("\nValidating transaction...");
-    if validate_transaction(&transaction, &wallet_a) {
-        println!("Transaction is valid. Processing...");
-        process_transaction(&mut transaction, &mut wallet_a, &mut wallet_b);
-        println!("Transaction processed.");
-        println!("\nFinal balances:");
-        println!("  Wallet A balance: {}", wallet_a.balance());
-        println!("  Wallet A nonce: {}", wallet_a.nonce);
-        println!("  Wallet B balance: {}", wallet_b.balance());
+    println!("\nMining a new block...");
+    let transactions_for_block = mempool.get_transactions(10);
+    let new_block = blockchain.create_block(transactions_for_block);
+    if blockchain.add_block(new_block.clone()) {
+        println!("New block added to the blockchain successfully.");
+        for tx in &new_block.transactions {
+            wallet_a.apply_transaction(tx);
+            wallet_b.apply_transaction(tx);
+        }
     } else {
-        println!("Transaction is invalid");
+        println!("Failed to add new block.");
     }
+
+    println!("\nFinal state:");
+    println!("  Number of blocks in blockchain: {}", blockchain.blocks.len());
+    println!("  Mempool size: {}", mempool.size());
+    println!("  Wallet A balance: {} units", wallet_a.balance);
+    println!("  Wallet B balance: {} units", wallet_b.balance);
 } 
