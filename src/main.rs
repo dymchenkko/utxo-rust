@@ -1,5 +1,5 @@
-use utxo_rust::simulation;
+use utxo_rust::simulation::run_simulation;
 
 fn main() {
-    simulation::run();
+    run_simulation();
 }
