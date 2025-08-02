@@ -1,8 +1,7 @@
-use serde::{Deserialize, Serialize};
-use ed25519_dalek::{Signature, VerifyingKey, Verifier, Signer};
-use sha2::{Sha256, Digest};
-use std::time::{SystemTime, UNIX_EPOCH};
 use bincode;
+use ed25519_dalek::{Signature, Signer, Verifier, VerifyingKey};
+use serde::{Deserialize, Serialize};
+use sha2::{Digest, Sha256};
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Transaction {
@@ -64,4 +63,4 @@ mod tests {
     fn test_transaction_creation() {
         // This test needs to be adapted as we can't use Wallet here directly
     }
-} 
+}

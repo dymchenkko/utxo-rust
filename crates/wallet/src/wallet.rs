@@ -1,14 +1,12 @@
 use common::transaction::Transaction;
 use ed25519_dalek::{Signature, Signer, SigningKey, VerifyingKey};
 use rand::rngs::OsRng;
-use std::collections::HashMap;
 
 #[derive(Debug)]
 pub struct Wallet {
     pub signing_key: SigningKey,
     pub verifying_key: VerifyingKey,
     pub balance: u64,
-    pub utxos: std::collections::HashMap<String, u64>,
     pub nonce: u64,
 }
 
@@ -21,7 +19,6 @@ impl Wallet {
             signing_key,
             verifying_key,
             balance: 0,
-            utxos: HashMap::new(),
             nonce: 0,
         }
     }
@@ -30,7 +27,11 @@ impl Wallet {
         self.signing_key.sign(message)
     }
 
-    pub fn create_transaction(&mut self, receiver_address: VerifyingKey, amount: u64) -> Transaction {
+    pub fn create_transaction(
+        &mut self,
+        receiver_address: VerifyingKey,
+        amount: u64,
+    ) -> Transaction {
         self.balance -= amount;
         let mut tx = Transaction::new(self.verifying_key, receiver_address, amount, self.nonce);
         tx.sign(&self.signing_key);
@@ -43,4 +44,4 @@ impl Wallet {
             self.balance += tx.amount;
         }
     }
-} 
+}
