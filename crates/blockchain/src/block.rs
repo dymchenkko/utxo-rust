@@ -1,7 +1,7 @@
 use common::transaction::Transaction;
+use hex;
 use sha2::{Digest, Sha256};
 use std::time::SystemTime;
-use hex;
 
 #[derive(Clone, Debug)]
 pub struct BlockHeader {
@@ -54,10 +54,7 @@ impl Block {
             return String::from("0").repeat(64);
         }
 
-        let mut hashes: Vec<String> = transactions
-            .iter()
-            .map(|tx| hex::encode(tx.id))
-            .collect();
+        let mut hashes: Vec<String> = transactions.iter().map(|tx| hex::encode(tx.id)).collect();
 
         while hashes.len() > 1 {
             hashes = hashes
@@ -83,4 +80,4 @@ impl Block {
         // The loop continues until only one hash remains, which is the Merkle Root.
         hashes.pop().unwrap()
     }
-} 
+}

@@ -14,9 +14,10 @@ impl Mempool {
 
     pub fn add_transaction(&mut self, transaction: Transaction) -> bool {
         if self.transactions.contains_key(&hex::encode(transaction.id)) {
-            return false; 
+            return false;
         }
-        self.transactions.insert(hex::encode(transaction.id), transaction);
+        self.transactions
+            .insert(hex::encode(transaction.id), transaction);
         true
     }
 
@@ -35,4 +36,4 @@ impl Mempool {
     pub fn size(&self) -> usize {
         self.transactions.len()
     }
-} 
+}

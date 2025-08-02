@@ -4,6 +4,6 @@
 //! This crate provides basic functionalities for wallet and transaction management.
 
 pub use blockchain;
-pub use wallet;
 pub use common;
-pub mod simulation; 
+pub use wallet;
+pub mod simulation;
